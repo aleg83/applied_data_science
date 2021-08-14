@@ -35,6 +35,9 @@ app.layout = html.Div(children=[html.H1('SpaceX Launch Records Dashboard',
                                     ),
                                 html.Br(),
                                 
+                                html.Div(dcc.Graph(id='success-count-pie-chart')),
+                                html.Br(),
+                                
                                 # TASK 2: Add a pie chart to show the total successful launches count for all sites
                                 # If a specific launch site was selected, show the Success vs. Failed counts for the site
                                 html.Div(dcc.Graph(id='success-pie-chart')),
@@ -60,6 +63,15 @@ app.layout = html.Div(children=[html.H1('SpaceX Launch Records Dashboard',
                                 html.Div(dcc.Graph(id='success-payload-scatter-chart')),
                                 ])
 
+@app.callback(Output(component_id='success-count-pie-chart', component_property='figure'),
+    Input(component_id='site-dropdown', component_property='value'))
+
+def get_count_pie_chart(input_site):
+    fig = px.pie(spacex_df, names='Launch Site', values ='class', title = 'Successful launches per site')
+    fig.update_traces(textinfo='value')
+    fig.show()
+    return fig
+
 @app.callback(Output(component_id='success-pie-chart', component_property='figure'),
     Input(component_id='site-dropdown', component_property='value'))
 
@@ -68,13 +80,13 @@ def get_pie_chart(input_site):
         data = spacex_df[['Launch Site','class']].groupby(['Launch Site']).sum() # here we have the number of successful launches per orbit
         data['Success rate'] = 100*data['class']/spacex_df['Launch Site'].value_counts() # get the success rate per orbit
         data['Launch Site'] = data.index
-        fig = px.pie(data, names='Launch Site', values ='class')
+        fig = px.pie(data, names='Launch Site', values ='class', title = 'Success rate per site')
     else:
         data = spacex_df[spacex_df['Launch Site']==input_site]
         counts = data['class'].value_counts().to_frame('success')
         counts['Class'] = counts.index
-        counts.success = 100 * counts.success / (sum(counts.success))
-        fig = px.pie(counts, names='Class', values =100 * counts.success / (sum(counts.success)))
+        fig = px.pie(counts, names='Class', values =100 * counts.success / (sum(counts.success)),
+                     title = 'Success rate at ' + input_site)
 
     return fig
 
@@ -98,4 +110,4 @@ def get_scatter_plot(input_site, payload_slider):
 
 # Run the app
 if __name__ == '__main__':
-    app.run_server()
+    app.run_server(port=8060)
